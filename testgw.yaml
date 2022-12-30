@@ -1,0 +1,38 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: phpgw
+spec:
+  selector:
+    #ip: "external"
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 15021
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+    #- phpservice
+    #- sqlservice
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: phpvs
+spec:
+  hosts:
+  - "*"
+  #- phpservice
+  gateways:
+  - phpgw
+  http:
+  - match:
+    - uri:
+        prefix:
+    route:
+    - destination:
+        host: kiali.istio-system.svc.cluster.local
+        port:
+          number: 20001

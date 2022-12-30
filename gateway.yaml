@@ -1,0 +1,40 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: phpgateway
+spec:
+  selector:
+    #ip: "external"
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+    #- phpservice
+    #- sqlservice
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: bookinfo
+spec:
+  hosts:
+  - "*"
+  #- phpservice
+  gateways:
+  - phpgateway
+  http:
+  - match:
+    - uri:
+        prefix:
+    rewrite:
+      uri: /index.php
+    route:
+    - destination:
+        host: phpservice
+        port:
+          number: 8080

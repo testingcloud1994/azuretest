@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysqlsecret
+type: Opaque
+data:
+     name: "c3VyYWo="
+     pass: "dGVzdA=="
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysqlconfig
+data:
+  SQL_USER: suraj
+  SQL_HOST: mysqlhost
+  DB_NAME: visitdatabase
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: phpnginx
+  labels:
+    app: "nginxapp"
+spec:
+  containers:
+  - name: phptest
+    image: trafex/php-nginx
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+    ports:
+    - name: myphpport
+      containerPort: 8080
+    env:
+    - name: sqluser
+      valueFrom:
+        configMapKeyRef:
+          name: mysqlconfig
+          key: SQL_USER
+    - name: sqlhost
+      valueFrom:
+        configMapKeyRef:
+          name: mysqlconfig
+          key: SQL_HOST
+    
+#    volumeMounts:
+#    - name: myscret
+#      mountPath: /var/www/html
+    
+  volumes:
+#  - name: myscret
+#    secret:
+#      secretName: mysqlsecret
+  - name: config
+    configMap:
+     name: mysqlconfig
+     items: 
+      - key: SQL_USER
+        path: SQL_USER
+      - key: SQL_HOST
+        path: SQL_HOST
+
+    
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpservice
+spec:
+  type: LoadBalancer
+  selector:
+    app: "nginxapp"
+  ports:
+  - port: 9090
+    targetPort: myphpport
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysqlserver
+  labels:
+    app: "sqlapp"
+spec:
+  containers:
+  - name: sqlserver
+    image: mysql
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: password
+    args:
+    resources:
+      requests:
+        memory: "500Mi"
+        cpu: "250m"
+      limits:
+        memory: "500Mi"
+        cpu: "500m"
+    ports:
+    - name: mysqlport
+      containerPort: 3306
+---
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: sqlservice
+spec:
+  selector:
+    app: "sqlapp"
+  ports:
+  - port: 9000
+    targetPort: mysqlport

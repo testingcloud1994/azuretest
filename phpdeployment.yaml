@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: testdep
+  labels:
+    app: phpdeployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: phpdeployment
+  template:
+    metadata:
+      labels:
+        app: phpdeployment
+    spec:
+      containers:
+      - name: phptest
+        image: trafex/php-nginx
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        ports:
+        - name: nginxport
+          containerPort: 8080
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpservice
+spec:
+  selector:
+    app: phpdeployment
+  ports:
+  - port: 80
+    targetPort: nginxport
+
